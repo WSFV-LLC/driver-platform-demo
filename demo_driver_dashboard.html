@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driver Dashboard — ABC Driver</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
+.header { background: #3d4c2a; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 24px; }
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.tab { padding: 12px 24px; background: white; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+.tab.active { background: #3d4c2a; color: white; border-color: #3d4c2a; }
+.request-card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.request-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #f0f0f0; }
+.client-name { font-size: 20px; font-weight: 600; color: #3d4c2a; }
+.status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.status-pending { background: #fff3cd; color: #856404; }
+.status-quoted { background: #d1ecf1; color: #0c5460; }
+.status-confirmed { background: #d4edda; color: #155724; }
+.status-completed { background: #cce5ff; color: #004085; }
+.status-declined { background: #f8d7da; color: #721c24; }
+.status-cancelled { background: #f8d7da; color: #721c24; }
+.status-paid { background: #c3e6cb; color: #1e7e34; }
+.detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+.detail-item { padding: 8px; background: #f8f9fa; border-radius: 4px; }
+.detail-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.detail-value { font-size: 14px; font-weight: 600; color: #333; }
+.bid-section { background: #f8f9fa; border: 2px solid #3d4c2a; border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+.bid-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.bid-label { font-weight: 600; color: #666; }
+.bid-amount { font-size: 24px; font-weight: bold; color: #3d4c2a; }
+.counter-input { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+.counter-input input { flex: 1; padding: 10px; border: 2px solid #3d4c2a; border-radius: 4px; font-size: 16px; font-weight: 600; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 14px; }
+.btn-accept { background: #28a745; color: white; }
+.btn-accept:hover { background: #218838; }
+.btn-counter { background: #ffc107; color: #333; }
+.btn-counter:hover { background: #e0a800; }
+.btn-deny { background: #b71c1c; color: white; }
+.btn-deny:hover { background: #8b0000; }
+.btn-paid { background: #28a745; color: white; }
+.btn-receipt { background: #6c757d; color: white; }
+.empty-state { text-align: center; padding: 60px 20px; color: #999; }
+.calendar-view { background: white; border-radius: 8px; padding: 20px; }
+.client-card { background: #f8f9fa; padding: 16px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #3d4c2a; cursor: pointer; transition: all 0.3s; }
+.client-card:hover { background: #e9ecef; transform: translateX(4px); }
+.balance-badge { background: #dc3545; color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+.balance-badge.paid { background: #28a745; }
+.back-btn { background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-bottom: 16px; }
+.qr-code-section { display: flex; justify-content: center; align-items: center; padding: 24px 0; margin: 20px 0; border-top: 2px solid #e0e0e0; border-bottom: 2px solid #e0e0e0; background: #f8f9fa; }
+.qr-code-container { text-align: center; }
+.demo-banner { background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; text-align: center; font-size: 13px; color: #856404; font-weight: 600; }
+@media (max-width: 768px) {
+  body { padding: 10px; }
+  .header { flex-direction: column; gap: 12px; text-align: center; }
+  .header > div { text-align: center !important; }
+  .header h1 { font-size: 20px; }
+  #total-income { font-size: 24px !important; }
+  .tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; }
+  .tab { padding: 10px 16px; font-size: 13px; white-space: nowrap; }
+  .request-card { padding: 16px; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .counter-input { flex-direction: column; align-items: stretch; }
+  .actions { flex-direction: column; }
+  .btn { width: 100%; padding: 12px 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="demo-banner">🚗 DEMO MODE — ABC Driver | Data resets on refresh. No real data is stored.</div>
+
+<div class="header">
+  <div>
+    <h1>Driver Dashboard</h1>
+    <div style="font-size:14px;">ABC Driver</div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:12px; color:rgba(255,255,255,0.8); margin-bottom:4px;">Total Income</div>
+    <div id="total-income" style="font-size:28px; font-weight:bold;">$0.00</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('pending')">Pending Requests</div>
+  <div class="tab" onclick="showTab('quoted')">Quoted</div>
+  <div class="tab" onclick="showTab('confirmed')">Confirmed</div>
+  <div class="tab" onclick="showTab('completed')">Completed</div>
+  <div class="tab" onclick="showTab('cancelled')">Cancelled</div>
+  <div class="tab" onclick="showTab('clients')">Clients</div>
+  <div class="tab" onclick="showTab('calendar')">Calendar</div>
+  <div class="tab" onclick="showTab('earnings')">Weekly Earnings</div>
+</div>
+
+<div class="qr-code-section">
+  <div class="qr-code-container">
+    <div style="font-size:14px; color:#666; margin-bottom:12px; font-weight:600;">Client Booking Portal</div>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://example.com" alt="QR Code" style="width:200px; height:200px; border:3px solid #3d4c2a; border-radius:8px;">
+    <div style="font-size:12px; color:#999; margin-top:8px;">your-short-link-here</div>
+  </div>
+</div>
+
+<!-- Tab containers -->
+<div id="pending-tab"><div id="pending-list"></div></div>
+<div id="quoted-tab" style="display:none;"><div id="quoted-list"></div></div>
+<div id="confirmed-tab" style="display:none;"><div id="confirmed-list"></div></div>
+<div id="completed-tab" style="display:none;"><div id="completed-list"></div></div>
+<div id="cancelled-tab" style="display:none;"><div id="cancelled-list"></div></div>
+
+<div id="clients-tab" style="display:none;">
+  <div class="calendar-view">
+    <div id="clients-list-view">
+      <h2 style="margin-bottom:16px; color:#3d4c2a;">All Clients</h2>
+      <input type="text" id="client-search" placeholder="Search by name or phone..." style="width:100%; padding:12px; border:2px solid #e0e0e0; border-radius:6px; margin-bottom:16px; font-size:15px;" oninput="renderClients()">
+      <div id="clients-list"></div>
+    </div>
+    <div id="client-detail-view" style="display:none;"></div>
+  </div>
+</div>
+
+<div id="calendar-tab" style="display:none;">
+  <div class="calendar-view">
+    <h2 style="margin-bottom:16px; color:#3d4c2a;">Upcoming Rides</h2>
+    <div id="calendar-list"></div>
+  </div>
+</div>
+
+<div id="earnings-tab" style="display:none;">
+  <div class="calendar-view">
+    <h2 style="margin-bottom:16px; color:#3d4c2a;">Weekly Earnings</h2>
+    <p style="color:#666; margin-bottom:20px; font-size:14px;">Sunday – Saturday</p>
+    <div style="background:#3d4c2a; color:white; border-radius:8px; padding:20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-size:13px; opacity:0.8; margin-bottom:4px;">Year to Date Earnings</div>
+        <div id="ytd-amount" style="font-size:32px; font-weight:bold;">$0.00</div>
+      </div>
+      <div style="font-size:40px; opacity:0.4;">💰</div>
+    </div>
+    <div id="earnings-list"></div>
+  </div>
+</div>
+
+<script>
+// ── DEMO DATA ──────────────────────────────────────────────────────────────
+
+const rides = [
+  {
+    id: 'r1',
+    client_name: 'Sarah Mitchell',
+    client_phone: '5551234567',
+    client_email: 'sarah.mitchell@email.com',
+    pickup_date: '2026-03-28',
+    pickup_time: '09:00',
+    pickup_address: '123 Maple Street, Springfield',
+    dropoff_address: 'Springfield International Airport',
+    passengers: '2',
+    luggage_type: 'Small load — 1 to 2 standard bags',
+    notes: 'Flight AA1234',
+    uber_estimate: 42.50,
+    client_bid: 38.00,
+    final_price: 38.00,
+    status: 'pending'
+  },
+  {
+    id: 'r2',
+    client_name: 'James Thornton',
+    client_phone: '5559876543',
+    client_email: 'jthornton@email.com',
+    pickup_date: '2026-03-26',
+    pickup_time: '14:00',
+    pickup_address: 'Downtown Conference Center',
+    dropoff_address: 'Riverside Hotel, Springfield',
+    passengers: '1',
+    luggage_type: 'No luggage — personal items only',
+    notes: '',
+    uber_estimate: 22.00,
+    client_bid: 20.00,
+    final_price: 20.00,
+    status: 'confirmed'
+  },
+  {
+    id: 'r3',
+    client_name: 'Maria Gonzalez',
+    client_phone: '5554443333',
+    client_email: 'mariag@email.com',
+    pickup_date: '2026-03-24',
+    pickup_time: '11:30',
+    pickup_address: 'Springfield Medical Center',
+    dropoff_address: '789 Elm Drive, Springfield',
+    passengers: '2',
+    luggage_type: 'No luggage — personal items only',
+    notes: 'Needs help with door',
+    uber_estimate: 18.50,
+    client_bid: 17.00,
+    final_price: 17.00,
+    status: 'completed'
+  },
+  {
+    id: 'r4',
+    client_name: 'David Park',
+    client_phone: '5552221111',
+    client_email: 'dpark@email.com',
+    pickup_date: '2026-03-22',
+    pickup_time: '08:00',
+    pickup_address: '456 Oak Avenue, Springfield',
+    dropoff_address: 'Springfield International Airport',
+    passengers: '3',
+    luggage_type: 'Medium load — 3 to 4 bags or one large item',
+    notes: '',
+    uber_estimate: 48.00,
+    client_bid: 42.00,
+    final_price: 42.00,
+    status: 'paid',
+    payment_method: 'Venmo',
+    paid_at: new Date('2026-03-22')
+  },
+  {
+    id: 'r5',
+    client_name: 'Sarah Mitchell',
+    client_phone: '5551234567',
+    client_email: 'sarah.mitchell@email.com',
+    pickup_date: '2026-03-15',
+    pickup_time: '16:30',
+    pickup_address: 'Springfield International Airport',
+    dropoff_address: '123 Maple Street, Springfield',
+    passengers: '2',
+    luggage_type: 'Small load — 1 to 2 standard bags',
+    notes: '',
+    uber_estimate: 44.00,
+    client_bid: 40.00,
+    final_price: 40.00,
+    status: 'paid',
+    payment_method: 'CashApp',
+    paid_at: new Date('2026-03-15')
+  },
+  {
+    id: 'r6',
+    client_name: 'Linda Carter',
+    client_phone: '5556667777',
+    client_email: 'lcarter@email.com',
+    pickup_date: '2026-03-18',
+    pickup_time: '10:00',
+    pickup_address: '321 Pine Road, Springfield',
+    dropoff_address: 'Northside Mall, Springfield',
+    passengers: '1',
+    luggage_type: 'No luggage — personal items only',
+    notes: '',
+    uber_estimate: 15.50,
+    client_bid: 15.00,
+    final_price: 15.00,
+    status: 'paid',
+    payment_method: 'Cash / Payment App',
+    paid_at: new Date('2026-03-18')
+  },
+  {
+    id: 'r7',
+    client_name: 'Tom Bradley',
+    client_phone: '5558889999',
+    client_email: 'tbradley@email.com',
+    pickup_date: '2026-03-10',
+    pickup_time: '19:00',
+    pickup_address: 'Riverfront Stadium',
+    dropoff_address: '88 Sunset Blvd, Springfield',
+    passengers: '4',
+    luggage_type: 'No luggage — personal items only',
+    notes: '',
+    uber_estimate: 28.00,
+    client_bid: 25.00,
+    final_price: 25.00,
+    status: 'paid',
+    payment_method: 'Venmo',
+    paid_at: new Date('2026-03-10')
+  },
+  {
+    id: 'r8',
+    client_name: 'James Thornton',
+    client_phone: '5559876543',
+    client_email: 'jthornton@email.com',
+    pickup_date: '2026-03-08',
+    pickup_time: '07:30',
+    pickup_address: 'Riverside Hotel, Springfield',
+    dropoff_address: 'Springfield International Airport',
+    passengers: '1',
+    luggage_type: 'Small load — 1 to 2 standard bags',
+    notes: '',
+    uber_estimate: 38.00,
+    client_bid: 35.00,
+    final_price: 35.00,
+    status: 'paid',
+    payment_method: 'CashApp',
+    paid_at: new Date('2026-03-08')
+  },
+  {
+    id: 'r9',
+    client_name: 'Rachel Kim',
+    client_phone: '5553334444',
+    client_email: 'rkim@email.com',
+    pickup_date: '2026-03-20',
+    pickup_time: '13:00',
+    pickup_address: '567 Birch Lane, Springfield',
+    dropoff_address: 'Springfield Art Museum',
+    passengers: '2',
+    luggage_type: 'No luggage — personal items only',
+    notes: '',
+    uber_estimate: 20.00,
+    client_bid: 18.00,
+    final_price: 18.00,
+    status: 'quoted'
+  },
+  {
+    id: 'r10',
+    client_name: 'Carlos Reyes',
+    client_phone: '5550001234',
+    client_email: 'creyes@email.com',
+    pickup_date: '2026-03-05',
+    pickup_time: '09:00',
+    pickup_address: '100 Willow Court, Springfield',
+    dropoff_address: 'Springfield Convention Center',
+    passengers: '1',
+    luggage_type: 'No luggage — personal items only',
+    notes: '',
+    uber_estimate: 22.00,
+    client_bid: 20.00,
+    final_price: null,
+    status: 'cancelled'
+  }
+];
+
+// ── TOTAL INCOME ───────────────────────────────────────────────────────────
+function calcTotalIncome() {
+  return rides.filter(r => r.status === 'paid').reduce((sum, r) => sum + (r.final_price || 0), 0);
+}
+document.getElementById('total-income').textContent = '$' + calcTotalIncome().toFixed(2);
+
+// ── TAB ROUTING ────────────────────────────────────────────────────────────
+const allTabs = ['pending','quoted','confirmed','completed','cancelled','clients','calendar','earnings'];
+
+function showTab(tab) {
+  allTabs.forEach(t => document.getElementById(t + '-tab').style.display = 'none');
+  document.getElementById(tab + '-tab').style.display = 'block';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  if (tab === 'clients') renderClients();
+  if (tab === 'calendar') renderCalendar();
+  if (tab === 'earnings') renderEarnings();
+  if (['pending','quoted','confirmed','completed','cancelled'].includes(tab)) renderRideList(tab);
+}
+
+// ── RENDER RIDE LISTS ──────────────────────────────────────────────────────
+function renderRideList(status) {
+  const containerId = status + '-list';
+  const filtered = rides.filter(r => {
+    if (status === 'completed') return r.status === 'completed' || r.status === 'paid';
+    return r.status === status;
+  });
+  const container = document.getElementById(containerId);
+  if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">No requests yet</div>'; return; }
+  container.innerHTML = filtered.map(r => createRideCard(r)).join('');
+}
+
+// Render default tab on load
+renderRideList('pending');
+
+function createRideCard(data) {
+  const id = data.id;
+  const statusClass = `status-${data.status}`;
+  const amount = (data.final_price !== undefined && data.final_price !== null) ? data.final_price : (data.client_bid || 0);
+  let actionButtons = '';
+
+  if (data.status === 'pending') {
+    actionButtons = `
+      <div class="counter-input">
+        <span style="font-weight:600;">Counter offer: $</span>
+        <input type="number" id="counter-${id}" placeholder="Enter amount" min="0" step="0.01">
+      </div>
+      <div class="actions" style="margin-top:12px;">
+        <button class="btn btn-accept" onclick="acceptBid('${id}')">Accept Their Bid ($${(data.client_bid||0).toFixed(2)})</button>
+        <button class="btn btn-counter" onclick="sendCounter('${id}')">Send Counter Offer</button>
+        <button class="btn btn-deny" onclick="denyRide('${id}')">Deny Request</button>
+      </div>`;
+  } else if (data.status === 'quoted') {
+    actionButtons = `
+      <div class="actions">
+        <button class="btn btn-accept" onclick="acceptOnBehalf('${id}')">Accept on Client's Behalf</button>
+        <button class="btn btn-deny" onclick="cancelRideStatus('${id}')">Cancel Quote</button>
+      </div>`;
+  } else if (data.status === 'confirmed') {
+    actionButtons = `
+      <div class="counter-input" style="margin-bottom:12px;">
+        <span style="font-weight:600;">Edit Amount: $</span>
+        <input type="number" id="edit-${id}" value="${amount.toFixed(2)}" min="0" step="0.01">
+      </div>
+      <div class="actions">
+        <button class="btn btn-counter" onclick="updateAmount('${id}')">Update Amount</button>
+        <button class="btn btn-paid" onclick="markComplete('${id}')">Ride Complete</button>
+        <button class="btn btn-deny" onclick="cancelRideStatus('${id}')">Cancel Ride</button>
+      </div>`;
+  } else if (data.status === 'completed') {
+    actionButtons = `
+      <div class="actions">
+        <button class="btn btn-paid" onclick="markPaid('${id}')">Mark as Paid</button>
+        <button class="btn btn-deny" onclick="cancelRideStatus('${id}')">Cancel Ride</button>
+      </div>`;
+  } else if (data.status === 'paid') {
+    actionButtons = `
+      <div class="counter-input" style="margin-bottom:12px;">
+        <span style="font-weight:600;">Edit Amount: $</span>
+        <input type="number" id="edit-${id}" value="${amount.toFixed(2)}" min="0" step="0.01">
+      </div>
+      <div class="actions">
+        <button class="btn btn-counter" onclick="updateAmount('${id}')">Update Amount</button>
+        <button class="btn btn-receipt" onclick="viewReceipt('${id}')">View Receipt</button>
+        <button class="btn" style="background:#6c757d; color:white;" onclick="hideRide('${id}')">Hide</button>
+        <button class="btn btn-deny" onclick="deleteRide('${id}')">Delete</button>
+      </div>`;
+  } else if (data.status === 'cancelled') {
+    actionButtons = `
+      <div class="actions">
+        <button class="btn btn-accept" onclick="restoreRide('${id}')">Restore to Confirmed</button>
+        <button class="btn btn-deny" onclick="deleteRide('${id}')">Delete</button>
+      </div>`;
+  }
+
+  return `
+    <div class="request-card">
+      <div class="request-header">
+        <div class="client-name">${data.client_name}</div>
+        <div class="status-badge ${statusClass}">${data.status}</div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Phone</div><div class="detail-value">${data.client_phone}</div></div>
+        <div class="detail-item"><div class="detail-label">Email</div><div class="detail-value">${data.client_email}</div></div>
+        <div class="detail-item"><div class="detail-label">Date & Time</div><div class="detail-value">${data.pickup_date} at ${data.pickup_time}</div></div>
+        <div class="detail-item"><div class="detail-label">Passengers</div><div class="detail-value">${data.passengers} passengers</div></div>
+      </div>
+      <div class="detail-item" style="margin-bottom:12px;"><div class="detail-label">Route</div><div class="detail-value">${data.pickup_address} → ${data.dropoff_address}</div></div>
+      <div class="detail-item" style="margin-bottom:12px;"><div class="detail-label">Luggage</div><div class="detail-value">${data.luggage_type}</div></div>
+      ${data.notes ? `<div class="detail-item" style="margin-bottom:12px;"><div class="detail-label">Notes</div><div class="detail-value">${data.notes}</div></div>` : ''}
+      <div class="bid-section">
+        <div class="bid-row"><span class="bid-label">Uber Comfort Estimate:</span><span style="font-size:18px; font-weight:600;">$${(data.uber_estimate||0).toFixed(2)}</span></div>
+        <div class="bid-row"><span class="bid-label">Client's Offer:</span><span class="bid-amount">$${(data.client_bid||0).toFixed(2)}</span></div>
+        ${data.counter_offer ? `<div class="bid-row"><span class="bid-label">Your Counter:</span><span style="font-size:18px; font-weight:600; color:#ffc107;">$${data.counter_offer.toFixed(2)}</span></div>` : ''}
+        ${data.final_price !== null && data.final_price !== undefined ? `<div class="bid-row"><span class="bid-label">Final Price:</span><span class="bid-amount">$${data.final_price.toFixed(2)}</span></div>` : ''}
+      </div>
+      ${actionButtons}
+    </div>`;
+}
+
+// ── RIDE ACTIONS ───────────────────────────────────────────────────────────
+function getRide(id) { return rides.find(r => r.id === id); }
+
+function acceptBid(id) {
+  const ride = getRide(id);
+  if (!confirm(`Accept client's bid of $${(ride.client_bid||0).toFixed(2)}?`)) return;
+  ride.status = 'confirmed';
+  ride.final_price = ride.client_bid;
+  alert('Bid accepted! Booking confirmed. In the live platform, the client receives an email and your calendar is updated automatically.');
+  renderRideList('pending');
+  document.getElementById('total-income').textContent = '$' + calcTotalIncome().toFixed(2);
+}
+
+function sendCounter(id) {
+  const input = document.getElementById('counter-' + id);
+  const amount = parseFloat(input.value);
+  if (isNaN(amount) || amount < 0) { alert('Please enter a valid amount'); return; }
+  if (!confirm(`Send counter offer of $${amount.toFixed(2)}?`)) return;
+  const ride = getRide(id);
+  ride.status = 'quoted';
+  ride.counter_offer = amount;
+  ride.final_price = amount;
+  alert('Counter offer sent! In the live platform, the client receives an email notification.');
+  renderRideList('pending');
+}
+
+function acceptOnBehalf(id) {
+  if (!confirm('Confirm this ride on behalf of the client?')) return;
+  const ride = getRide(id);
+  ride.status = 'confirmed';
+  alert('Ride confirmed!');
+  renderRideList('quoted');
+}
+
+function updateAmount(id) {
+  const input = document.getElementById('edit-' + id);
+  const newAmount = parseFloat(input.value);
+  if (isNaN(newAmount) || newAmount < 0) { alert('Please enter a valid amount'); return; }
+  if (!confirm(`Update ride amount to $${newAmount.toFixed(2)}?`)) return;
+  getRide(id).final_price = newAmount;
+  alert('Amount updated!');
+  document.getElementById('total-income').textContent = '$' + calcTotalIncome().toFixed(2);
+}
+
+function markComplete(id) {
+  if (!confirm('Mark this ride as complete?')) return;
+  getRide(id).status = 'completed';
+  alert('Marked as complete!');
+  renderRideList('confirmed');
+}
+
+function markPaid(id) {
+  if (!confirm('Mark as paid?')) return;
+  const ride = getRide(id);
+  ride.status = 'paid';
+  ride.paid_at = new Date();
+  ride.payment_method = 'Cash / Payment App';
+  alert('Marked as paid!');
+  renderRideList('completed');
+  document.getElementById('total-income').textContent = '$' + calcTotalIncome().toFixed(2);
+}
+
+function cancelRideStatus(id) {
+  if (!confirm('Cancel this ride?')) return;
+  getRide(id).status = 'cancelled';
+  alert('Ride cancelled.');
+  renderRideList('confirmed');
+  renderRideList('quoted');
+}
+
+function hideRide(id) {
+  if (!confirm('Hide this ride from the Completed tab?')) return;
+  getRide(id).hidden = true;
+  alert('Ride hidden!');
+  renderRideList('completed');
+}
+
+function deleteRide(id) {
+  if (!confirm('Permanently delete this ride?')) return;
+  const idx = rides.findIndex(r => r.id === id);
+  if (idx > -1) rides.splice(idx, 1);
+  alert('Ride deleted.');
+  renderRideList('cancelled');
+  renderRideList('completed');
+  document.getElementById('total-income').textContent = '$' + calcTotalIncome().toFixed(2);
+}
+
+function restoreRide(id) {
+  if (!confirm('Restore this ride to confirmed status?')) return;
+  getRide(id).status = 'confirmed';
+  alert('Ride restored!');
+  renderRideList('cancelled');
+}
+
+function viewReceipt(id) {
+  window.open('demo_receipt.html?id=' + id, '_blank');
+}
+
+// ── CLIENTS TAB ────────────────────────────────────────────────────────────
+function renderClients() {
+  const searchTerm = document.getElementById('client-search').value.toLowerCase();
+  const clientsMap = new Map();
+  rides.forEach(r => {
+    if (['declined','cancelled'].includes(r.status)) return;
+    if (!clientsMap.has(r.client_phone)) {
+      clientsMap.set(r.client_phone, { name: r.client_name, phone: r.client_phone, email: r.client_email, totalRides: 0, balanceDue: 0, rides: [] });
+    }
+    const c = clientsMap.get(r.client_phone);
+    c.totalRides++;
+    c.rides.push(r);
+    if (r.status === 'completed' && r.final_price) c.balanceDue += r.final_price;
+  });
+
+  const clients = Array.from(clientsMap.values()).filter(c =>
+    c.name.toLowerCase().includes(searchTerm) || c.phone.includes(searchTerm)
+  );
+
+  const container = document.getElementById('clients-list');
+  if (clients.length === 0) { container.innerHTML = '<div class="empty-state">No clients found</div>'; return; }
+
+  container.innerHTML = clients.map(client => {
+    const balanceClass = client.balanceDue > 0 ? '' : 'paid';
+    const balanceText = client.balanceDue > 0 ? `Due: $${client.balanceDue.toFixed(2)}` : 'Paid Up';
+    return `
+      <div class="client-card" onclick="viewClientDetail('${client.phone}')">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:600; font-size:16px; color:#3d4c2a;">${client.name}</div>
+            <div style="font-size:14px; color:#666; margin-top:4px;">${client.phone} • ${client.email}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="balance-badge ${balanceClass}">${balanceText}</div>
+            <div style="font-size:12px; color:#999; margin-top:4px;">Total Rides: ${client.totalRides}</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function viewClientDetail(phone) {
+  const clientRides = rides.filter(r => r.client_phone === phone && !['declined','cancelled'].includes(r.status));
+  if (clientRides.length === 0) return;
+  const c = { name: clientRides[0].client_name, phone, email: clientRides[0].client_email };
+
+  document.getElementById('clients-list-view').style.display = 'none';
+  document.getElementById('client-detail-view').style.display = 'block';
+
+  const sorted = [...clientRides].sort((a,b) => new Date(b.pickup_date) - new Date(a.pickup_date));
+  const balanceDue = clientRides.filter(r => r.status === 'completed').reduce((s,r) => s + (r.final_price||0), 0);
+  const balanceColor = balanceDue > 0 ? '#dc3545' : '#28a745';
+  const balanceText = balanceDue > 0 ? `Balance Due: $${balanceDue.toFixed(2)}` : 'All Paid Up!';
+
+  const ridesHtml = sorted.map(ride => {
+    const price = (ride.final_price !== undefined && ride.final_price !== null) ? ride.final_price : (ride.client_bid || 0);
+    const statusClass = `status-${ride.status}`;
+    const canEdit = ['confirmed','completed','paid'].includes(ride.status);
+    const editSection = canEdit ? `
+      <div style="margin-top:12px; padding-top:12px; border-top:1px solid #e0e0e0;">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <span style="font-size:13px; font-weight:600;">Edit: $</span>
+          <input type="number" id="client-edit-${ride.id}" value="${price.toFixed(2)}" min="0" step="0.01" style="flex:1; padding:8px; border:2px solid #3d4c2a; border-radius:4px; font-size:14px;">
+          <button class="btn btn-counter" onclick="updateClientRideAmount('${ride.id}')" style="padding:8px 16px; font-size:13px;">Update</button>
+        </div>
+      </div>` : '';
+    return `
+      <div class="request-card" style="margin-bottom:12px;">
+        <div class="request-header">
+          <div style="font-weight:600; color:#3d4c2a;">${ride.pickup_date} at ${ride.pickup_time}</div>
+          <div class="status-badge ${statusClass}">${ride.status}</div>
+        </div>
+        <div style="font-size:14px; color:#666; margin-top:8px;">${ride.pickup_address} → ${ride.dropoff_address}</div>
+        <div style="font-size:18px; font-weight:600; color:${ride.status==='completed'?'#dc3545':'#28a745'}; margin-top:8px;">
+          $${price.toFixed(2)} ${ride.status==='completed' ? '(Unpaid)' : ''}
+        </div>
+        ${editSection}
+      </div>`;
+  }).join('');
+
+  document.getElementById('client-detail-view').innerHTML = `
+    <button class="back-btn" onclick="backToClients()">← Back to Clients</button>
+    <div style="background:#f8f9fa; padding:20px; border-radius:8px; margin-bottom:20px;">
+      <h2 style="color:#3d4c2a; margin-bottom:8px;">${c.name}</h2>
+      <div style="color:#666; margin-bottom:16px;">${c.phone} • ${c.email}</div>
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <div><div style="font-size:12px; color:#666;">Total Rides</div><div style="font-size:24px; font-weight:600; color:#3d4c2a;">${clientRides.length}</div></div>
+        <div><div style="font-size:12px; color:#666;">Balance</div><div style="font-size:24px; font-weight:600; color:${balanceColor};">${balanceText}</div></div>
+      </div>
+    </div>
+    <h3 style="margin-bottom:12px; color:#3d4c2a;">Ride History</h3>
+    ${ridesHtml}`;
+}
+
+function updateClientRideAmount(id) {
+  const input = document.getElementById('client-edit-' + id);
+  const newAmount = parseFloat(input.value);
+  if (isNaN(newAmount) || newAmount < 0) { alert('Please enter a valid amount'); return; }
+  if (!confirm(`Update ride amount to $${newAmount.toFixed(2)}?`)) return;
+  getRide(id).final_price = newAmount;
+  alert('Amount updated!');
+  document.getElementById('total-income').textContent = '$' + calcTotalIncome().toFixed(2);
+}
+
+function backToClients() {
+  document.getElementById('clients-list-view').style.display = 'block';
+  document.getElementById('client-detail-view').style.display = 'none';
+  renderClients();
+}
+
+// ── CALENDAR TAB ───────────────────────────────────────────────────────────
+function renderCalendar() {
+  const confirmed = rides.filter(r => r.status === 'confirmed').sort((a,b) => new Date(a.pickup_date+' '+a.pickup_time) - new Date(b.pickup_date+' '+b.pickup_time));
+  const container = document.getElementById('calendar-list');
+  if (confirmed.length === 0) { container.innerHTML = '<div class="empty-state">No upcoming rides</div>'; return; }
+  container.innerHTML = confirmed.map(r => `
+    <div style="padding:12px; border-left:4px solid #3d4c2a; margin-bottom:12px; background:#f8f9fa;">
+      <div style="font-weight:600; color:#3d4c2a;">${r.pickup_date} at ${r.pickup_time}</div>
+      <div style="font-size:14px; color:#666; margin-top:4px;">${r.client_name} • ${r.pickup_address} → ${r.dropoff_address}</div>
+      <div style="font-size:14px; color:#3d4c2a; font-weight:600; margin-top:4px;">$${(r.final_price||r.client_bid||0).toFixed(2)}</div>
+    </div>`).join('');
+}
+
+// ── WEEKLY EARNINGS TAB ────────────────────────────────────────────────────
+function getWeekKey(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function renderEarnings() {
+  const currentYear = new Date().getFullYear();
+  const paidRides = rides.filter(r => r.status === 'paid' && r.paid_at);
+  const weeklyTotals = new Map();
+
+  paidRides.forEach(r => {
+    const weekKey = getWeekKey(r.paid_at);
+    if (!weeklyTotals.has(weekKey)) weeklyTotals.set(weekKey, { startDate: weekKey, total: 0, count: 0 });
+    weeklyTotals.get(weekKey).total += r.final_price || 0;
+    weeklyTotals.get(weekKey).count++;
+  });
+
+  // YTD: all paid rides in current year
+  const ytd = paidRides
+    .filter(r => new Date(r.paid_at).getFullYear() === currentYear)
+    .reduce((sum, r) => sum + (r.final_price || 0), 0);
+  document.getElementById('ytd-amount').textContent = '$' + ytd.toFixed(2);
+
+  const container = document.getElementById('earnings-list');
+  if (weeklyTotals.size === 0) { container.innerHTML = '<div class="empty-state">No paid rides yet</div>'; return; }
+
+  const sortedWeeks = Array.from(weeklyTotals.values()).sort((a,b) => new Date(b.startDate) - new Date(a.startDate));
+
+  container.innerHTML = sortedWeeks.map(week => {
+    const [sy, sm, sd] = week.startDate.split('-').map(Number);
+    const sunday = new Date(sy, sm - 1, sd);
+    const saturday = new Date(sy, sm - 1, sd + 6);
+    const weekLabel = `${sunday.toLocaleDateString('en-US', {month:'short', day:'numeric'})} – ${saturday.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+
+    return `
+      <div class="request-card" style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:600; font-size:16px; color:#3d4c2a;">${weekLabel}</div>
+            <div style="font-size:13px; color:#666; margin-top:4px;">${week.count} paid ride${week.count !== 1 ? 's' : ''}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12px; color:#666;">Earnings</div>
+            <div style="font-size:24px; font-weight:700; color:#3d4c2a;">$${week.total.toFixed(2)}</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
